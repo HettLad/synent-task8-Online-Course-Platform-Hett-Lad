@@ -12,6 +12,115 @@ const Navbar = () => {
     navigate('/login');
   };
 
+  const isAdmin = user && user.role === 'admin';
+
+  if (isAdmin) {
+    return (
+      <header className="glass" style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
+        borderTop: 'none',
+        borderLeft: 'none',
+        borderRight: 'none',
+        borderBottom: '1px solid var(--border-glass)',
+        borderRadius: 0
+      }}>
+        <div className="container" style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          height: '80px'
+        }}>
+          {/* Admin Logo */}
+          <Link to="/admin" style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            textDecoration: 'none',
+            color: 'var(--text-primary)',
+            fontSize: '24px',
+            fontWeight: 800,
+            fontFamily: 'var(--font-heading)'
+          }}>
+            <div className="flex-center" style={{
+              background: 'linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%)',
+              width: '40px',
+              height: '40px',
+              borderRadius: '10px',
+              boxShadow: '0 0 15px var(--secondary-glow)'
+            }}>
+              <ShieldAlert size={20} color="white" />
+            </div>
+            <span className="text-gradient">EduStream Admin</span>
+          </Link>
+
+          {/* Admin Nav Actions */}
+          <nav style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+            <Link to="/admin" style={{
+              color: 'var(--text-primary)',
+              textDecoration: 'none',
+              fontWeight: 600,
+              fontSize: '15px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'var(--transition-fast)'
+            }} className="nav-link-hover">
+              <Layout size={16} />
+              Console Dashboard
+            </Link>
+
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px',
+              borderLeft: '1px solid var(--border-glass)',
+              paddingLeft: '16px',
+              marginLeft: '8px'
+            }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  {user.name}
+                </span>
+                <span style={{ fontSize: '11px', color: 'var(--secondary)', fontWeight: 600 }}>
+                  Administrator
+                </span>
+              </div>
+
+              <div className="flex-center" style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                background: 'var(--border-glass)',
+                color: 'var(--text-secondary)'
+              }}>
+                <UserIcon size={18} />
+              </div>
+
+              <button 
+                onClick={handleLogout}
+                className="btn btn-glass" 
+                style={{ padding: '8px 14px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <LogOut size={14} />
+                Logout
+              </button>
+            </div>
+          </nav>
+        </div>
+
+        <style>{`
+          .nav-link-hover:hover {
+            color: var(--text-primary) !important;
+            transform: translateY(-1px);
+          }
+        `}</style>
+      </header>
+    );
+  }
+
+  // Standard User / Visitor Navbar
   return (
     <header className="glass" style={{
       position: 'sticky',
@@ -79,22 +188,6 @@ const Navbar = () => {
                 <Layout size={16} />
                 My Learning
               </Link>
-
-              {user.role === 'admin' && (
-                <Link to="/admin" style={{
-                  color: 'var(--secondary)',
-                  textDecoration: 'none',
-                  fontWeight: 600,
-                  fontSize: '15px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  transition: 'var(--transition-fast)'
-                }} className="nav-link-hover">
-                  <ShieldAlert size={16} />
-                  Admin Panel
-                </Link>
-              )}
 
               <div style={{
                 display: 'flex',
