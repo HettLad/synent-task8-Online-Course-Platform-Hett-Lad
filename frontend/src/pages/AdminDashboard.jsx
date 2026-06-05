@@ -584,11 +584,11 @@ const AdminDashboard = () => {
         {/* -------------------- TAB CONTENT 4: REGISTERED USERS -------------------- */}
         {activeTab === 'users' && (
           <div>
-            <h3 style={{ fontSize: '20px', marginBottom: '20px', fontFamily: 'var(--font-heading)' }}>Users Directory ({usersList.length})</h3>
+            <h3 style={{ fontSize: '20px', marginBottom: '20px', fontFamily: 'var(--font-heading)' }}>Users Directory ({usersList.filter(u => u.role !== 'admin').length})</h3>
             {loadingUsers ? (
               <div className="flex-center" style={{ minHeight: '200px' }}><div className="spinner"></div></div>
-            ) : usersList.length === 0 ? (
-              <div className="glass flex-center" style={{ minHeight: '150px' }}>No accounts found.</div>
+            ) : usersList.filter(u => u.role !== 'admin').length === 0 ? (
+              <div className="glass flex-center" style={{ minHeight: '150px' }}>No student accounts found.</div>
             ) : (
               <div className="glass" style={{ borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', textAlign: 'left' }}>
@@ -602,14 +602,14 @@ const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {usersList.map((user, idx) => (
-                      <tr key={user._id} style={{ borderBottom: idx !== usersList.length - 1 ? '1px solid var(--border-glass)' : 'none' }}>
+                    {usersList.filter(u => u.role !== 'admin').map((user, idx) => (
+                      <tr key={user._id} style={{ borderBottom: idx !== usersList.filter(u => u.role !== 'admin').length - 1 ? '1px solid var(--border-glass)' : 'none' }}>
                         <td style={{ padding: '16px', fontWeight: 600 }}>{user.name}</td>
                         <td style={{ padding: '16px' }}>
                           <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Mail size={14} color="var(--text-muted)" /> {user.email}</span>
                         </td>
                         <td style={{ padding: '16px' }}>
-                          <span className={user.role === 'admin' ? 'badge badge-secondary' : 'badge badge-primary'} style={{ textTransform: 'capitalize' }}>
+                          <span className="badge badge-primary" style={{ textTransform: 'capitalize' }}>
                             {user.role}
                           </span>
                         </td>
@@ -653,19 +653,20 @@ const AdminDashboard = () => {
                   </thead>
                   <tbody>
                     {enrollmentsList.map((en, idx) => (
-                      <tr key={en._id} style={{ borderBottom: idx !== enrollmentsList.length - 1 ? '1px solid var(--border-glass)' : 'none' }}>
-                        <td style={{ padding: '16px' }}>
-                          <div>
-                            <span style={{ fontWeight: 600, display: 'block' }}>{en.user?.name || 'Deleted User'}</span>
-                            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{en.user?.email || 'N/A'}</span>
+                      <tr key={en._id} style={{ borderBottom: idx !== enrollmentsList.length - 1 ? '1px solid var(--border-glass)' : 'none', height: '54px' }}>
+                        <td style={{ padding: '12px 16px', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+                          <span style={{ fontWeight: 600 }} title={en.user?.email || 'N/A'}>{en.user?.name || 'Deleted User'}</span>
+                        </td>
+                        <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
+                          <div style={{ maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 500 }} title={en.course?.title || 'Deleted Course'}>
+                            {en.course?.title || 'Deleted Course'}
                           </div>
                         </td>
-                        <td style={{ padding: '16px', fontWeight: 500 }}>{en.course?.title || 'Deleted Course'}</td>
-                        <td style={{ padding: '16px', fontWeight: 600 }}>₹{en.amount}</td>
-                        <td style={{ padding: '16px', fontFamily: 'monospace', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                        <td style={{ padding: '12px 16px', fontWeight: 600, whiteSpace: 'nowrap', verticalAlign: 'middle' }}>₹{en.amount}</td>
+                        <td style={{ padding: '12px 16px', fontFamily: 'monospace', fontSize: '11px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
                           {en.razorpayOrderId}
                         </td>
-                        <td style={{ padding: '16px' }}>
+                        <td style={{ padding: '12px 16px', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
                           <span className={
                             en.status === 'completed' ? 'badge badge-success' : 
                             en.status === 'pending' ? 'badge badge-warning' : 'badge badge-danger'
@@ -673,7 +674,7 @@ const AdminDashboard = () => {
                             {en.status}
                           </span>
                         </td>
-                        <td style={{ padding: '16px', color: 'var(--text-muted)' }}>
+                        <td style={{ padding: '12px 16px', color: 'var(--text-muted)', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
                           {new Date(en.createdAt).toLocaleDateString()}
                         </td>
                       </tr>
