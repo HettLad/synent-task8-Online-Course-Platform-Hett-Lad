@@ -6,12 +6,12 @@ const seedData = async () => {
   try {
     // Check if courses already exist
     const courseCount = await Course.countDocuments();
-    if (courseCount > 0) {
-      console.log('Database already seeded. Skipping auto-seed.');
+    if (courseCount >= 12) {
+      console.log('Database already seeded with all 12 default courses. Skipping auto-seed.');
       return;
     }
 
-    console.log('Seeding Database...');
+    console.log('Seeding Database with 12 mock courses...');
 
     // 1. Create Admin and Student users
     const adminExist = await User.findOne({ email: 'admin@edustream.com' });
@@ -37,6 +37,26 @@ const seedData = async () => {
       });
       console.log('Student user created (student@edustream.com / studentpassword123)');
     }
+
+    // Deleting only default courses to avoid duplication when upgrading the seed list
+    await Course.deleteMany({
+      title: {
+        $in: [
+          'React.js - Complete Frontend Development Guide',
+          'Full Stack Node.js & Express Fundamentals',
+          'Modern UI/UX Design System & Masterclass',
+          'JavaScript Algorithms & Data Structures Masterclass',
+          'MongoDB Database Architecture & Advanced Modeling',
+          'Advanced CSS Grid, Flexbox & Animations Masterclass',
+          'Python for Data Science & Machine Learning Boot Camp',
+          'Mastering Git & GitHub: Professional Version Control',
+          'Next.js 14 Production-Ready App Router Masterclass',
+          'Introduction to Docker & Containerization for Beginners',
+          'Tailwind CSS: Rapidly Build Responsive Interfaces',
+          'TypeScript Essentials: Write Safe & Clean JavaScript'
+        ]
+      }
+    });
 
     // 2. Create Courses
     const courses = [
@@ -160,11 +180,271 @@ const seedData = async () => {
             ]
           }
         ]
+      },
+      {
+        title: 'JavaScript Algorithms & Data Structures Masterclass',
+        description: 'Crack coding interviews and level up your problem-solving. Master Big O analysis, arrays, strings, stacks, queues, hash tables, and advanced sorting algorithms.',
+        price: 799,
+        category: 'Development',
+        instructor: 'Admin Instructor',
+        thumbnail: 'https://images.unsplash.com/photo-1579468118864-1b9ea3c0db4a?w=800',
+        modules: [
+          {
+            title: 'Module 1: Complexity & Recursion',
+            lessons: [
+              {
+                title: '1.1 Big O Notation Explained',
+                videoUrl: 'https://www.youtube.com/embed/V6mKVRU1evU',
+                duration: '16:40',
+                content: 'Introduction to time and space complexity analysis. Learn how to quantify algorithm efficiency and write scalable code.'
+              },
+              {
+                title: '1.2 Recursion Mechanics',
+                videoUrl: 'https://www.youtube.com/embed/l7X9yQbTz78',
+                duration: '14:15',
+                content: 'Understand call stacks, base cases, helper recursion patterns, and how to debug recursive structures.'
+              }
+            ]
+          },
+          {
+            title: 'Module 2: Essential Algorithms',
+            lessons: [
+              {
+                title: '2.1 Elementary Sorting Algorithms',
+                videoUrl: 'https://www.youtube.com/embed/xli_FI7CuzA',
+                duration: '18:30',
+                content: 'Examine Bubble Sort, Selection Sort, and Insertion Sort. Compare implementation trade-offs.'
+              },
+              {
+                title: '2.2 Advanced Divide & Conquer Sorting',
+                videoUrl: 'https://www.youtube.com/embed/Ns7tGNbtvV4',
+                duration: '24:50',
+                content: 'Step-by-step trace of Merge Sort and Quick Sort algorithm logic, complexity, and JS implementation.'
+              }
+            ]
+          }
+        ]
+      },
+      {
+        title: 'MongoDB Database Architecture & Advanced Modeling',
+        description: 'Design robust, scalable database systems. Learn embedding vs referencing, mongoose validations, index strategies, aggregation pipelines, and production configurations.',
+        price: 1199,
+        category: 'Databases',
+        instructor: 'Marcus Vance',
+        thumbnail: 'https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=800',
+        modules: [
+          {
+            title: 'Module 1: Document Modeling Basics',
+            lessons: [
+              {
+                title: '1.1 SQL vs NoSQL Foundations',
+                videoUrl: 'https://www.youtube.com/embed/EE8ZT3aLfEQ',
+                duration: '15:10',
+                content: 'Contrast relational rows and tables against JSON documents. Understand when to select NoSQL.'
+              },
+              {
+                title: '1.2 Mongoose Schema Definitions',
+                videoUrl: 'https://www.youtube.com/embed/WDrU305J1yw',
+                duration: '19:40',
+                content: 'Define mongoose schemas, structure models, add default values, and perform queries in Express.'
+              }
+            ]
+          }
+        ]
+      },
+      {
+        title: 'Advanced CSS Grid, Flexbox & Animations Masterclass',
+        description: 'Level up your frontend layouts. Master complex Flexbox containers, nested CSS grids, fluid layouts, custom properties, and keyframe-based transition animations.',
+        price: 599,
+        category: 'Design',
+        instructor: 'Clara Dupont',
+        thumbnail: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=800',
+        modules: [
+          {
+            title: 'Module 1: Layout Systems Mastery',
+            lessons: [
+              {
+                title: '1.1 Flexbox Layout Mechanics',
+                videoUrl: 'https://www.youtube.com/embed/fYq5PXgSsbE',
+                duration: '13:50',
+                content: 'Master flex properties like flex-grow, flex-shrink, and wrap behaviors for custom layout alignments.'
+              },
+              {
+                title: '1.2 CSS Grid Alignment & Templates',
+                videoUrl: 'https://www.youtube.com/embed/jV8B24rSN5o',
+                duration: '18:25',
+                content: 'Construct grid templates using areas, auto-fill, auto-fit, minmax functions, and handle overlapping grid elements.'
+              }
+            ]
+          }
+        ]
+      },
+      {
+        title: 'Python for Data Science & Machine Learning Boot Camp',
+        description: 'Analyze data, build predictive models, and learn machine learning libraries like NumPy, Pandas, Scikit-Learn, and Seaborn.',
+        price: 1299,
+        category: 'Data Science',
+        instructor: 'Dr. Angela Lin',
+        thumbnail: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800',
+        modules: [
+          {
+            title: 'Module 1: Python Basics & NumPy Arrays',
+            lessons: [
+              {
+                title: '1.1 Jupyter Setup & Syntax Core',
+                videoUrl: 'https://www.youtube.com/embed/kqtD5dpn9C8',
+                duration: '18:15',
+                content: 'Install Python libraries, launch Jupyter notebooks, write custom functions, and manage loops.'
+              },
+              {
+                title: '1.2 Multi-dimensional Calculations',
+                videoUrl: 'https://www.youtube.com/embed/QUT1VHiLgKQ',
+                duration: '22:40',
+                content: 'Understand numpy array indexing, slicing, reshaping, matrices, and broadcasting rules.'
+              }
+            ]
+          }
+        ]
+      },
+      {
+        title: 'Mastering Git & GitHub: Professional Version Control',
+        description: 'Never fear merge conflicts again. Learn Git repository basics, interactive rebasing, branch logic, pull requests, and collaborate seamlessly.',
+        price: 399,
+        category: 'Development',
+        instructor: 'Admin Instructor',
+        thumbnail: 'https://images.unsplash.com/photo-1618401471353-b98aedd07871?w=800',
+        modules: [
+          {
+            title: 'Module 1: Local & Remote Git Fundamentals',
+            lessons: [
+              {
+                title: '1.1 Git Initialization & Lifecycle',
+                videoUrl: 'https://www.youtube.com/embed/8JJ101D3knE',
+                duration: '14:20',
+                content: 'Initialize your local project workspace, manage staging areas, review changes, and record commits.'
+              },
+              {
+                title: '1.2 Branching, Merging & Conflicts',
+                videoUrl: 'https://www.youtube.com/embed/oPpnCh7InLY',
+                duration: '19:55',
+                content: 'Create branches, merge feature work, understand fast-forwards, and resolve code merge conflicts.'
+              }
+            ]
+          }
+        ]
+      },
+      {
+        title: 'Next.js 14 Production-Ready App Router Masterclass',
+        description: 'Build fast React applications. Master route layouts, React Server Components (RSC), SEO meta tags, API endpoints, and database integration.',
+        price: 1099,
+        category: 'Development',
+        instructor: 'Dev-Link Academy',
+        thumbnail: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800',
+        modules: [
+          {
+            title: 'Module 1: Server Components & Routing',
+            lessons: [
+              {
+                title: '1.1 Server vs Client Components',
+                videoUrl: 'https://www.youtube.com/embed/wm5gMKuwSYk',
+                duration: '20:10',
+                content: 'Understand RSC architecture, dynamic routing parameters, loading screens, and layout configurations.'
+              },
+              {
+                title: '1.2 Server Data Fetching Patterns',
+                videoUrl: 'https://www.youtube.com/embed/gSSsRRYy-zY',
+                duration: '25:35',
+                content: 'Fetch database records on the server, configure caching headers, and apply static route revalidations.'
+              }
+            ]
+          }
+        ]
+      },
+      {
+        title: 'Introduction to Docker & Containerization for Beginners',
+        description: 'Package your backend and frontend code to run identically on any platform. Build Dockerfiles, manage network ports, and deploy container clusters.',
+        price: 699,
+        category: 'DevOps',
+        instructor: 'James Mercer',
+        thumbnail: 'https://images.unsplash.com/photo-1607799279861-4dd421887fb3?w=800',
+        modules: [
+          {
+            title: 'Module 1: Docker Containers 101',
+            lessons: [
+              {
+                title: '1.1 Why Containerization Matters',
+                videoUrl: 'https://www.youtube.com/embed/3c-iMh1Y8fc',
+                duration: '15:40',
+                content: 'Distinguish virtual machines from lightweight container runtimes. Learn basic docker daemon operations.'
+              },
+              {
+                title: '1.2 Creating Docker Images',
+                videoUrl: 'https://www.youtube.com/embed/fqMOX6JJhGo',
+                duration: '18:50',
+                content: 'Write custom multi-stage Dockerfiles, build local images, map ports, and run container instances.'
+              }
+            ]
+          }
+        ]
+      },
+      {
+        title: 'Tailwind CSS: Rapidly Build Responsive Interfaces',
+        description: 'Design beautiful, responsive landing pages without writing standard CSS files. Learn spacing, grids, dark modes, customization, and animations.',
+        price: 499,
+        category: 'Design',
+        instructor: 'Sarah Jenkins',
+        thumbnail: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=800',
+        modules: [
+          {
+            title: 'Module 1: Tailwind Grid & Spacing Utility',
+            lessons: [
+              {
+                title: '1.1 Setting Up Tailwind CSS',
+                videoUrl: 'https://www.youtube.com/embed/mr15Xzb1Ook',
+                duration: '12:30',
+                content: 'Initialize tailwind configuration files, import base layers, and write utility class selectors.'
+              },
+              {
+                title: '1.2 Flex layouts & Responsive Prefixing',
+                videoUrl: 'https://www.youtube.com/embed/Hq_qVw3J5rw',
+                duration: '17:15',
+                content: 'Style components for mobile devices and use tailwind responsive break parameters.'
+              }
+            ]
+          }
+        ]
+      },
+      {
+        title: 'TypeScript Essentials: Write Safe & Clean JavaScript',
+        description: 'Prevent client errors before compilation. Master basic typing, interfaces, custom types, generic parameters, and compile configurations.',
+        price: 899,
+        category: 'Development',
+        instructor: 'Marcus Vance',
+        thumbnail: 'https://images.unsplash.com/photo-1516116211223-5c359a36298a?w=800',
+        modules: [
+          {
+            title: 'Module 1: Type Definitions & Compiling',
+            lessons: [
+              {
+                title: '1.1 TypeScript Core Basic Types',
+                videoUrl: 'https://www.youtube.com/embed/BwuLxPH8IDs',
+                duration: '14:50',
+                content: 'Define numbers, strings, arrays, objects, tuples, and configure the tsconfig parameters.'
+              },
+              {
+                title: '1.2 Interfaces & Generics Rules',
+                videoUrl: 'https://www.youtube.com/embed/z58R5l1fBFE',
+                duration: '22:10',
+                content: 'Define user interfaces, extend interface parameters, and write polymorphic typed generic components.'
+              }
+            ]
+          }
+        ]
       }
     ];
 
     await Course.create(courses);
-    console.log('Successfully seeded 3 courses!');
+    console.log(`Successfully seeded ${courses.length} courses!`);
   } catch (error) {
     console.error('Error seeding database:', error.message);
   }
