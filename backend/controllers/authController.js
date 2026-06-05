@@ -1,47 +1,124 @@
 const User = require('../models/User');
+const Otp = require('../models/Otp');
 const sendEmail = require('../utils/sendEmail');
 const crypto = require('crypto');
 
-// @desc    Register a new user
+// @desc    Send OTP to email for registration
+// @route   POST /api/auth/send-otp
+// @access  Public
+exports.sendOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'Please provide an email' });
+    }
+
+    // Check if user already exists
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      return res.status(400).json({ success: false, error: 'User already exists with this email' });
+    }
+
+    // Generate a 6-digit numeric OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Save/update OTP in database
+    await Otp.findOneAndUpdate(
+      { email },
+      { otp, createdAt: Date.now() },
+      { upsert: true, new: true }
+    );
+
+    // Send email with OTP
+    const message = `Your email verification OTP code is: ${otp}. This code will expire in 10 minutes.`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 500px; border: 1px solid #eee; border-radius: 8px;">
+        <h2 style="color: #6366f1;">Email Verification Code</h2>
+        <p>Your one-time registration code is:</p>
+        <div style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; font-size: 24px; font-weight: bold; letter-spacing: 4px; text-align: center; color: #4f46e5; margin: 20px 0;">
+          ${otp}
+        </div>
+        <p>This code will expire in 10 minutes. If you did not request this code, please ignore this email.</p>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+        <p style="font-size: 11px; color: #777;">EduStream Platform Team</p>
+      </div>
+    `;
+
+    let emailPreviewUrl = '';
+    try {
+      emailPreviewUrl = await sendEmail({
+        email,
+        subject: 'EduStream - Registration Verification Code',
+        message,
+        html
+      });
+    } catch (err) {
+      console.error('OTP email failed to send', err);
+      return res.status(500).json({ success: false, error: 'Failed to send OTP email' });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'OTP sent successfully to your email!',
+      emailPreviewUrl,
+      otpDev: otp // Returned for easy local dev testing
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// @desc    Register a new user (with verified OTP)
 // @route   POST /api/auth/register
 // @access  Public
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, otp, role } = req.body;
+
+    if (!otp) {
+      return res.status(400).json({ success: false, error: 'OTP code is required to complete registration' });
+    }
 
     // Check if user already exists
     let user = await User.findOne({ email });
     if (user) {
-      return res.status(400).json({ success: false, error: 'User already exists' });
+      return res.status(400).json({ success: false, error: 'User already exists with this email' });
     }
 
+    // Find if there is a matching OTP
+    const otpRecord = await Otp.findOne({ email });
+    if (!otpRecord || otpRecord.otp !== otp) {
+      return res.status(400).json({ success: false, error: 'Invalid or expired verification OTP code' });
+    }
+
+    // Delete OTP record
+    await otpRecord.deleteOne();
+
     // Create user (role can be specified, defaults to 'user')
+    // Set isVerified to true immediately since they entered correct OTP sent to email!
     user = new User({
       name,
       email,
       password,
-      role: role || 'user'
+      role: role || 'user',
+      isVerified: true // Set verified directly on valid OTP matching!
     });
 
-    // Generate verification token
-    const verificationToken = user.getVerificationToken();
     await user.save();
 
-    // Verification URL
-    const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?token=${verificationToken}`;
-
-    const message = `Welcome to EduStream, ${name}! Please verify your email by clicking the link below:\n\n${verificationUrl}\n\nIf you did not register, please ignore this email.`;
+    // Send a welcome email (email confirmation of registration)
+    const message = `Welcome to EduStream, ${name}! Your account has been successfully verified and created. You can now access your learning console.`;
     const html = `
-      <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-        <h2>Welcome to EduStream, ${name}!</h2>
-        <p>Thank you for registering. Please click the button below to verify your email address and access your dashboard:</p>
-        <p style="margin: 30px 0;">
-          <a href="${verificationUrl}" style="background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Verify Email Address</a>
+      <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 500px; border: 1px solid #eee; border-radius: 8px;">
+        <h2 style="color: #6366f1;">Welcome to EduStream!</h2>
+        <p>Hello <strong>${name}</strong>,</p>
+        <p>Your account is successfully created and verified. You can now sign in to purchase programs, manage lessons, and track your syllabus progress.</p>
+        <p style="margin: 30px 0; text-align: center;">
+          <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/login" style="background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Go to Login</a>
         </p>
-        <p>Or copy and paste this link in your browser:</p>
-        <p style="color: #6366f1; word-break: break-all;">${verificationUrl}</p>
         <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
-        <p style="font-size: 12px; color: #777;">This email was sent automatically. If you did not create an account, please ignore it.</p>
+        <p style="font-size: 11px; color: #777;">EduStream Platform Team</p>
       </div>
     `;
 
@@ -49,20 +126,18 @@ exports.register = async (req, res) => {
     try {
       emailPreviewUrl = await sendEmail({
         email: user.email,
-        subject: 'EduStream - Verify Email Address',
+        subject: 'Welcome to EduStream!',
         message,
         html
       });
     } catch (err) {
-      console.error('Email could not be sent', err);
+      console.error('Welcome email failed', err);
     }
 
     res.status(201).json({
       success: true,
-      message: 'Registration successful! Verification email sent.',
-      emailPreviewUrl, // Provided for easy development/testing clicking
-      // Return verification token in dev environment for easy verification without email access
-      verificationTokenDev: verificationToken
+      message: 'Account created and verified successfully!',
+      emailPreviewUrl
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

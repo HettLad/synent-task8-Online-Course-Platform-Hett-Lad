@@ -41,13 +41,32 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const registerUser = async (name, email, password) => {
+  const sendOtp = async (email) => {
+    setAuthError(null);
+    try {
+      const response = await fetch(`${API_URL}/auth/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to send OTP');
+      }
+      return data;
+    } catch (err) {
+      setAuthError(err.message);
+      throw err;
+    }
+  };
+
+  const registerUser = async (name, email, password, otp) => {
     setAuthError(null);
     try {
       const response = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password })
+        body: JSON.stringify({ name, email, password, otp })
       });
       const data = await response.json();
       if (!data.success) {
@@ -157,6 +176,7 @@ export const AuthProvider = ({ children }) => {
         loading,
         authError,
         registerUser,
+        sendOtp,
         verifyEmailToken,
         loginUser,
         logoutUser,

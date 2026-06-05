@@ -88,15 +88,19 @@ const Navbar = () => {
                 </span>
               </div>
 
-              <div className="flex-center" style={{
+              <Link to="/profile" className="flex-center avatar-hover" style={{
                 width: '36px',
                 height: '36px',
                 borderRadius: '50%',
                 background: 'var(--border-glass)',
-                color: 'var(--text-secondary)'
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                transition: 'var(--transition-fast)',
+                textDecoration: 'none',
+                border: '1px solid var(--border-glass)'
               }}>
                 <UserIcon size={18} />
-              </div>
+              </Link>
 
               <button 
                 onClick={handleLogout}
@@ -206,15 +210,19 @@ const Navbar = () => {
                   </span>
                 </div>
 
-                <div className="flex-center" style={{
+                <Link to="/profile" className="flex-center avatar-hover" style={{
                   width: '36px',
                   height: '36px',
                   borderRadius: '50%',
                   background: 'var(--border-glass)',
-                  color: 'var(--text-secondary)'
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  transition: 'var(--transition-fast)',
+                  textDecoration: 'none',
+                  border: '1px solid var(--border-glass)'
                 }}>
                   <UserIcon size={18} />
-                </div>
+                </Link>
 
                 <button 
                   onClick={handleLogout}
@@ -243,6 +251,13 @@ const Navbar = () => {
         .nav-link-hover:hover {
           color: var(--text-primary) !important;
           transform: translateY(-1px);
+        }
+        .avatar-hover:hover {
+          color: white !important;
+          background: var(--primary) !important;
+          border-color: var(--primary-hover) !important;
+          transform: scale(1.08);
+          box-shadow: 0 0 10px var(--primary-glow);
         }
       `}</style>
     </header>

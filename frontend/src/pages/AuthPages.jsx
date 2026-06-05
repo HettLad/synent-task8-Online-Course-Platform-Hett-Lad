@@ -8,7 +8,7 @@ import { Mail, Lock, User, CheckCircle, AlertCircle, KeyRound, ExternalLink } fr
    1. LOGIN PAGE
    ========================================================================== */
 export const Login = () => {
-  const { loginUser, authError } = useContext(AuthContext);
+  const { loginUser, user, authError } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
@@ -17,6 +17,16 @@ export const Login = () => {
   const [loading, setLoading] = useState(false);
   const [notVerified, setNotVerified] = useState(false);
 
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
+    }
+  }, [user, navigate]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
@@ -24,8 +34,12 @@ export const Login = () => {
     setLoading(true);
 
     try {
-      await loginUser(email, password);
-      navigate('/dashboard');
+      const data = await loginUser(email, password);
+      if (data.user && data.user.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       if (err.message === 'NOT_VERIFIED') {
         setNotVerified(true);
@@ -131,26 +145,50 @@ export const Login = () => {
    2. REGISTER PAGE
    ========================================================================== */
 export const Register = () => {
-  const { registerUser } = useContext(AuthContext);
+  const { registerUser, sendOtp } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
+  const [otp, setOtp] = useState('');
+  
+  // Steps: 1 = Details, 2 = OTP Verification
+  const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [otpSentData, setOtpSentData] = useState(null);
   const [successData, setSuccessData] = useState(null);
 
-  const handleSubmit = async (e) => {
+  // Send OTP
+  const handleSendCode = async (e) => {
     e.preventDefault();
     setErrorMsg('');
     setLoading(true);
 
     try {
-      const data = await registerUser(name, email, password);
+      const data = await sendOtp(email);
+      setOtpSentData(data);
+      setStep(2);
+    } catch (err) {
+      setErrorMsg(err.message || 'Failed to send verification code.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Verify & Register
+  const handleVerifyAndRegister = async (e) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setLoading(true);
+
+    try {
+      const data = await registerUser(name, email, password, otp);
       setSuccessData(data);
     } catch (err) {
-      setErrorMsg(err.message || 'Registration failed.');
+      setErrorMsg(err.message || 'OTP verification or registration failed.');
+    } finally {
       setLoading(false);
     }
   };
@@ -160,7 +198,9 @@ export const Register = () => {
       <Navbar />
       <div className="flex-center" style={{ minHeight: 'calc(100vh - 80px)', padding: '40px 20px' }}>
         <div className="glass" style={{ width: '100%', maxWidth: '460px', padding: '40px', borderRadius: 'var(--radius-md)' }}>
+          
           {successData ? (
+            /* Registration Success */
             <div style={{ textAlign: 'center' }}>
               <div className="flex-center" style={{
                 background: 'rgba(34, 197, 94, 0.1)',
@@ -172,9 +212,9 @@ export const Register = () => {
               }}>
                 <CheckCircle size={36} color="var(--success)" />
               </div>
-              <h2 style={{ fontSize: '28px', marginBottom: '12px' }} className="text-gradient">Check Your Email</h2>
+              <h2 style={{ fontSize: '28px', marginBottom: '12px' }} className="text-gradient">Account Verified</h2>
               <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '24px', lineHeight: 1.6 }}>
-                A verification link has been sent to <strong>{email}</strong>. Please click the link to verify your account and activate your profile.
+                Your email has been verified and your account is ready. You can now sign in to start learning!
               </p>
 
               {successData.emailPreviewUrl && (
@@ -186,33 +226,96 @@ export const Register = () => {
                   border: '1px solid var(--border-glass)',
                   textAlign: 'left'
                 }}>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Development Email Inbox (Ethereal)</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Welcome Email (Ethereal)</span>
                   <a
                     href={successData.emailPreviewUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{ color: 'var(--primary-hover)', fontSize: '13px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}
                   >
-                    Click to Open Sent Verification Email <ExternalLink size={14} />
+                    Open Sent Welcome Email <ExternalLink size={14} />
                   </a>
                 </div>
               )}
-
-              {/* Dev bypass shortcut */}
-              <div style={{ background: 'rgba(99, 102, 241, 0.05)', padding: '12px', border: '1px dashed var(--border-glass-active)', borderRadius: 'var(--radius-sm)', marginBottom: '24px' }}>
-                <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                  Developer Shortcut: Or verify instantly click bypass link below:
-                </p>
-                <Link to={`/verify-email?token=${successData.verificationTokenDev}`} style={{ fontSize: '12px', color: 'var(--primary-hover)', fontWeight: 600 }}>
-                  Verify Email Address Instantly &rarr;
-                </Link>
-              </div>
 
               <Link to="/login" className="btn btn-primary" style={{ width: '100%' }}>
                 Go to Sign In
               </Link>
             </div>
+          ) : step === 2 ? (
+            /* Step 2: OTP Entry */
+            <>
+              <h2 style={{ fontSize: '28px', marginBottom: '8px', textAlign: 'center' }} className="text-gradient">Enter Verification Code</h2>
+              <p style={{ color: 'var(--text-secondary)', textAlign: 'center', fontSize: '14px', marginBottom: '24px' }}>
+                We sent a 6-digit verification code to <strong>{email}</strong>.
+              </p>
+
+              {errorMsg && (
+                <div style={{
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid var(--danger)',
+                  padding: '12px 16px',
+                  borderRadius: 'var(--radius-sm)',
+                  marginBottom: '24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  fontSize: '14px'
+                }}>
+                  <AlertCircle size={18} color="var(--danger)" />
+                  <span>{errorMsg}</span>
+                </div>
+              )}
+
+              {otpSentData?.emailPreviewUrl && (
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  padding: '16px',
+                  borderRadius: 'var(--radius-sm)',
+                  marginBottom: '24px',
+                  border: '1px solid var(--border-glass)',
+                  textAlign: 'left'
+                }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Verification Email (Ethereal)</span>
+                  <a
+                    href={otpSentData.emailPreviewUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: 'var(--primary-hover)', fontSize: '13px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    Open Sent OTP Code Email <ExternalLink size={14} />
+                  </a>
+                </div>
+              )}
+              <form onSubmit={handleVerifyAndRegister}>
+                <div className="form-group">
+                  <label className="form-label">Verification Code (OTP)</label>
+                  <div style={{ position: 'relative' }}>
+                    <KeyRound size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '16px', top: '16px' }} />
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="e.g. 123456"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      style={{ paddingLeft: '48px', letterSpacing: '4px', fontWeight: 'bold', fontSize: '18px', textAlign: 'center' }}
+                      maxLength="6"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '14px', marginTop: '10px' }} disabled={loading}>
+                  {loading ? <div className="spinner"></div> : 'Verify & Create Account'}
+                </button>
+                
+                <button type="button" onClick={() => setStep(1)} className="btn btn-glass" style={{ width: '100%', padding: '14px', marginTop: '12px' }} disabled={loading}>
+                  Edit Registration Details
+                </button>
+              </form>
+            </>
           ) : (
+            /* Step 1: User details entry */
             <>
               <h2 style={{ fontSize: '32px', marginBottom: '8px', textAlign: 'center' }} className="text-gradient">Create Account</h2>
               <p style={{ color: 'var(--text-secondary)', textAlign: 'center', fontSize: '14px', marginBottom: '32px' }}>
@@ -236,7 +339,7 @@ export const Register = () => {
                 </div>
               )}
 
-              <form onSubmit={handleSubmit}>
+              <form onSubmit={handleSendCode}>
                 <div className="form-group">
                   <label className="form-label">Full Name</label>
                   <div style={{ position: 'relative' }}>
@@ -287,7 +390,7 @@ export const Register = () => {
                 </div>
 
                 <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '14px', marginTop: '10px' }} disabled={loading}>
-                  {loading ? <div className="spinner"></div> : 'Create Account'}
+                  {loading ? <div className="spinner"></div> : 'Send Verification Code'}
                 </button>
               </form>
 

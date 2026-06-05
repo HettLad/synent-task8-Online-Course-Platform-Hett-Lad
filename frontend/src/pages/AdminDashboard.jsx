@@ -38,6 +38,11 @@ const AdminDashboard = () => {
   const [selectedModuleId, setSelectedModuleId] = useState('');
   const [lessonForm, setLessonForm] = useState({ title: '', videoUrl: '', duration: '10:00', content: '' });
 
+  // Unenrollment States
+  const [showUnenrollModal, setShowUnenrollModal] = useState(false);
+  const [selectedUserForUnenroll, setSelectedUserForUnenroll] = useState(null);
+  const [revokingCourseId, setRevokingCourseId] = useState('');
+
   // Load Admin Data on startup
   useEffect(() => {
     fetchStats();
@@ -124,6 +129,43 @@ const AdminDashboard = () => {
       console.error(err);
     } finally {
       setLoadingEnrollments(false);
+    }
+  };
+
+  // Unenroll/Revoke course logic
+  const handleRevokeCourseAccess = async (userId, courseId) => {
+    if (!window.confirm('Are you sure you want to revoke this user\'s access to this course? They will lose all progress.')) return;
+    setRevokingCourseId(courseId);
+    try {
+      const res = await fetch(`http://localhost:5000/api/users/admin/users/${userId}/courses/${courseId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        // Refresh local lists
+        fetchUsers();
+        fetchEnrollments();
+        fetchStats();
+
+        // Update selectedUserForUnenroll list to update local modal state dynamically
+        const updatedEnrollments = selectedUserForUnenroll.enrolledCourses.filter(ec => {
+          const cid = typeof ec.course === 'object' ? ec.course?._id : ec.course;
+          return cid !== courseId;
+        });
+
+        setSelectedUserForUnenroll({
+          ...selectedUserForUnenroll,
+          enrolledCourses: updatedEnrollments
+        });
+      } else {
+        alert(data.error || 'Failed to revoke course access');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error revoking course access');
+    } finally {
+      setRevokingCourseId('');
     }
   };
 
@@ -599,6 +641,7 @@ const AdminDashboard = () => {
                       <th style={{ padding: '16px' }}>System Role</th>
                       <th style={{ padding: '16px' }}>Verification status</th>
                       <th style={{ padding: '16px' }}>Registered At</th>
+                      <th style={{ padding: '16px', textAlign: 'center' }}>Revoke Courses</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -620,6 +663,18 @@ const AdminDashboard = () => {
                         </td>
                         <td style={{ padding: '16px', color: 'var(--text-muted)' }}>
                           <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Calendar size={14} /> {new Date(user.createdAt).toLocaleDateString()}</span>
+                        </td>
+                        <td style={{ padding: '16px', textAlign: 'center' }}>
+                          <button
+                            onClick={() => {
+                              setSelectedUserForUnenroll(user);
+                              setShowUnenrollModal(true);
+                            }}
+                            className="btn btn-glass"
+                            style={{ padding: '6px 12px', fontSize: '12px' }}
+                          >
+                            Courses ({user.enrolledCourses?.length || 0})
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -884,6 +939,71 @@ const AdminDashboard = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== MANAGE STUDENT ENROLLMENTS (REVOKE) MODAL ==================== */}
+      {showUnenrollModal && selectedUserForUnenroll && (
+        <div className="modal-overlay" onClick={() => { setShowUnenrollModal(false); setSelectedUserForUnenroll(null); }}>
+          <div className="modal-content glass" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+            <button className="modal-close" onClick={() => { setShowUnenrollModal(false); setSelectedUserForUnenroll(null); }}>&times;</button>
+            <h2 style={{ fontSize: '22px', marginBottom: '8px' }}>Manage Course Access</h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '24px' }}>
+              Student: <strong>{selectedUserForUnenroll.name}</strong> ({selectedUserForUnenroll.email})
+            </p>
+
+            <h4 style={{ fontSize: '15px', marginBottom: '12px', color: 'white' }}>Enrolled Courses</h4>
+            {selectedUserForUnenroll.enrolledCourses && selectedUserForUnenroll.enrolledCourses.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {selectedUserForUnenroll.enrolledCourses.map((ec) => {
+                  const courseObj = ec.course;
+                  const courseId = typeof courseObj === 'object' ? courseObj?._id : courseObj;
+                  const courseTitle = typeof courseObj === 'object' ? courseObj?.title : 'Unknown Course';
+                  
+                  return (
+                    <div key={courseId} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '12px 16px',
+                      background: 'rgba(255,255,255,0.02)',
+                      border: '1px solid var(--border-glass)',
+                      borderRadius: '8px'
+                    }}>
+                      <span style={{ fontSize: '13px', fontWeight: 600, maxWidth: '70%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={courseTitle}>
+                        {courseTitle}
+                      </span>
+                      
+                      <button
+                        onClick={() => handleRevokeCourseAccess(selectedUserForUnenroll._id, courseId)}
+                        disabled={revokingCourseId === courseId}
+                        className="btn btn-danger"
+                        style={{ padding: '6px 12px', fontSize: '11px', borderRadius: '4px' }}
+                      >
+                        {revokingCourseId === courseId ? (
+                          <div className="spinner" style={{ width: '12px', height: '12px', borderWidth: '2px' }}></div>
+                        ) : (
+                          'Revoke Access'
+                        )}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div style={{ padding: '20px', textAlign: 'center', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                No active course enrollments found for this student.
+              </div>
+            )}
+
+            <button
+              onClick={() => { setShowUnenrollModal(false); setSelectedUserForUnenroll(null); }}
+              className="btn btn-glass"
+              style={{ width: '100%', marginTop: '24px' }}
+            >
+              Close Window
+            </button>
           </div>
         </div>
       )}

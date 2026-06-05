@@ -3,14 +3,12 @@ const nodemailer = require('nodemailer');
 const sendEmail = async (options) => {
   let transporter;
 
+  const isMockUser = !process.env.SMTP_USER || process.env.SMTP_USER === 'mock_user';
+  const isMockPass = !process.env.SMTP_PASS || process.env.SMTP_PASS === 'mock_pass' || process.env.SMTP_PASS.includes('your_gmail_app_password');
+
   // If mock credentials or default placeholders are used, try to generate a test Ethereal account
-  if (
-    !process.env.SMTP_USER || 
-    process.env.SMTP_USER === 'mock_user' || 
-    !process.env.SMTP_PASS || 
-    process.env.SMTP_PASS === 'mock_pass'
-  ) {
-    console.log('--- Using Ethereal Email Service (Auto Test Account) ---');
+  if (isMockUser || isMockPass) {
+    console.log('--- Using Ethereal Email Service (Real SMTP Credentials Not Fully Configured) ---');
     try {
       const testAccount = await nodemailer.createTestAccount();
       transporter = nodemailer.createTransport({
@@ -35,16 +33,29 @@ Message: ${options.message}
       return;
     }
   } else {
-    // Normal configured SMTP
-    transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT,
-      secure: process.env.SMTP_PORT == 465,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      }
-    });
+    // Normal configured SMTP or Gmail
+    const isGmail = process.env.SMTP_HOST === 'smtp.gmail.com' || (process.env.SMTP_USER && process.env.SMTP_USER.endsWith('@gmail.com'));
+    
+    if (isGmail) {
+      // Use nodemailer's built-in service definition for Gmail to ensure TLS/SSL config is correct
+      transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS
+        }
+      });
+    } else {
+      transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: process.env.SMTP_PORT,
+        secure: process.env.SMTP_PORT == 465,
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS
+        }
+      });
+    }
   }
 
   const message = {
@@ -60,7 +71,7 @@ Message: ${options.message}
   console.log(`Message sent: ${info.messageId}`);
   
   // Log link to Ethereal viewable message if using Ethereal
-  if (transporter.options.host === 'smtp.ethereal.email') {
+  if (transporter.options && transporter.options.host === 'smtp.ethereal.email') {
     const testUrl = nodemailer.getTestMessageUrl(info);
     console.log(`Preview URL: ${testUrl}`);
     return testUrl;

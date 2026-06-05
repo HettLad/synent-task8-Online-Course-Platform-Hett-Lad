@@ -120,7 +120,10 @@ exports.getAdminStats = async (req, res) => {
 // @access  Private/Admin
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.find({}).select('-password').sort({ createdAt: -1 });
+    const users = await User.find({})
+      .populate('enrolledCourses.course')
+      .select('-password')
+      .sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
@@ -151,3 +154,92 @@ exports.getAllEnrollments = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
+
+// @desc    Update user profile details
+// @route   PUT /api/users/profile
+// @access  Private
+exports.updateUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('+password');
+
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    // Update name if provided
+    if (req.body.name) {
+      user.name = req.body.name;
+    }
+
+    // Update password if provided
+    if (req.body.newPassword) {
+      if (!req.body.currentPassword) {
+        return res.status(400).json({ success: false, error: 'Please provide current password to update password' });
+      }
+
+      const isMatch = await user.matchPassword(req.body.currentPassword);
+      if (!isMatch) {
+        return res.status(400).json({ success: false, error: 'Current password is incorrect' });
+      }
+
+      user.password = req.body.newPassword;
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// @desc    Admin unenroll student from a course (take back course)
+// @route   DELETE /api/users/admin/users/:userId/courses/:courseId
+// @access  Private/Admin
+exports.unenrollUserCourse = async (req, res) => {
+  try {
+    const { userId, courseId } = req.params;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    // Check if enrolled
+    const enrolledIndex = user.enrolledCourses.findIndex(
+      (ec) => ec.course.toString() === courseId
+    );
+
+    if (enrolledIndex === -1) {
+      return res.status(400).json({ success: false, error: 'User is not enrolled in this course' });
+    }
+
+    // Remove course from user enrolled list
+    user.enrolledCourses.splice(enrolledIndex, 1);
+    await user.save();
+
+    // Update Enrollment log
+    await Enrollment.findOneAndUpdate(
+      { user: userId, course: courseId, status: 'completed' },
+      { status: 'failed' }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Course access revoked successfully'
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+

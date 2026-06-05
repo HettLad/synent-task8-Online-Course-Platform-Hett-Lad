@@ -12,6 +12,7 @@ import { Login, Register, VerifyEmail, ForgotPassword, ResetPassword } from './p
 import Dashboard from './pages/Dashboard';
 import CoursePlayer from './pages/CoursePlayer';
 import AdminDashboard from './pages/AdminDashboard';
+import Profile from './pages/Profile';
 
 function App() {
   return (
@@ -40,6 +41,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <CoursePlayer />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/profile" 
+            element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             } 
           />
