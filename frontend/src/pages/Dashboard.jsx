@@ -34,11 +34,12 @@ const Dashboard = () => {
 
   // Calculate stats
   const getStats = () => {
-    const total = enrolledCourses.length;
+    const validCourses = enrolledCourses.filter(ec => ec.course);
+    const total = validCourses.length;
     let completed = 0;
     let inProgress = 0;
 
-    enrolledCourses.forEach(ec => {
+    validCourses.forEach(ec => {
       const totalLessons = ec.course?.modules?.reduce((sum, mod) => sum + (mod.lessons?.length || 0), 0) || 0;
       const completedCount = ec.progress?.length || 0;
       
@@ -53,15 +54,18 @@ const Dashboard = () => {
   };
 
   const calculateProgress = (ec) => {
+    if (!ec.course) return 0;
     const totalLessons = ec.course?.modules?.reduce((sum, mod) => sum + (mod.lessons?.length || 0), 0) || 0;
     if (totalLessons === 0) return 0;
     const completedCount = ec.progress?.length || 0;
     return Math.round((completedCount / totalLessons) * 100);
   };
 
-  const filteredCourses = enrolledCourses.filter(ec => 
-    ec.course?.title?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredCourses = enrolledCourses
+    .filter(ec => ec.course)
+    .filter(ec => 
+      ec.course.title?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
   const stats = getStats();
 
@@ -155,7 +159,7 @@ const Dashboard = () => {
             <div className="spinner spinner-lg"></div>
             <p style={{ color: 'var(--text-muted)' }}>Retrieving your workspace...</p>
           </div>
-        ) : enrolledCourses.length === 0 ? (
+        ) : enrolledCourses.filter(ec => ec.course).length === 0 ? (
           <div className="glass flex-center" style={{
             minHeight: '300px',
             borderRadius: 'var(--radius-md)',

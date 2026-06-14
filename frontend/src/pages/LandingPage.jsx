@@ -58,7 +58,7 @@ const LandingPage = () => {
     if (!user || !user.enrolledCourses) return false;
     return user.enrolledCourses.some(ec => {
       // populate could mean object or string ID
-      const cid = typeof ec.course === 'object' ? ec.course._id : ec.course;
+      const cid = ec.course?._id || ec.course;
       return cid === courseId;
     });
   };

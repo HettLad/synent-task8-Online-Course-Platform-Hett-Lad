@@ -150,7 +150,7 @@ const AdminDashboard = () => {
 
         // Update selectedUserForUnenroll list to update local modal state dynamically
         const updatedEnrollments = selectedUserForUnenroll.enrolledCourses.filter(ec => {
-          const cid = typeof ec.course === 'object' ? ec.course?._id : ec.course;
+          const cid = ec.course?._id || ec.course;
           return cid !== courseId;
         });
 
@@ -958,8 +958,8 @@ const AdminDashboard = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {selectedUserForUnenroll.enrolledCourses.map((ec) => {
                   const courseObj = ec.course;
-                  const courseId = typeof courseObj === 'object' ? courseObj?._id : courseObj;
-                  const courseTitle = typeof courseObj === 'object' ? courseObj?.title : 'Unknown Course';
+                  const courseId = courseObj?._id || courseObj;
+                  const courseTitle = courseObj?.title || 'Unknown Course';
                   
                   return (
                     <div key={courseId} style={{

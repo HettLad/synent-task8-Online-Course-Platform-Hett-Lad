@@ -119,3 +119,11 @@ Follow these steps to start the application (do this in two separate terminals):
    npm run dev
    ```
 5. Click the link shown in your terminal (usually `http://localhost:5173`) to view the application in your browser.
+
+---
+
+## 🔧 Maintenance & Bug Fixes
+
+- **Graceful Course Reference Handling**: Resolved blank page crashes in `Dashboard.jsx`, `LandingPage.jsx`, `CoursePlayer.jsx`, and `AdminDashboard.jsx`. If a course is deleted or has missing catalog mappings, the application safely handles it without crashing the UI.
+- **Backend Hardening**: Added fallback checks in `paymentController.js` and `userController.js` to prevent server errors on legacy or deleted course ObjectIds.
+- **Enrolled Course Restoration**: Synced pre-existing test student enrollments (such as `student@edustream.com` and `ladhett@gmail.com`) with the active seeded course IDs, restoring course visibility in their dashboard instantly.

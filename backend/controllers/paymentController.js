@@ -41,9 +41,10 @@ exports.createOrder = async (req, res) => {
 
     // Check if user is already enrolled
     const user = await User.findById(userId);
-    const isAlreadyEnrolled = user.enrolledCourses.some(
-      (enrollment) => enrollment.course.toString() === courseId
-    );
+    const isAlreadyEnrolled = user.enrolledCourses.some((enrollment) => {
+      const cid = enrollment.course?._id || enrollment.course;
+      return cid && cid.toString() === courseId;
+    });
 
     if (isAlreadyEnrolled) {
       return res.status(400).json({ success: false, error: 'You are already enrolled in this course' });

@@ -41,9 +41,10 @@ exports.toggleLessonProgress = async (req, res) => {
     }
 
     // Find the enrolled course
-    const enrollmentIndex = user.enrolledCourses.findIndex(
-      (c) => c.course.toString() === courseId
-    );
+    const enrollmentIndex = user.enrolledCourses.findIndex((c) => {
+      const cid = c.course?._id || c.course;
+      return cid && cid.toString() === courseId;
+    });
 
     if (enrollmentIndex === -1) {
       return res.status(400).json({ success: false, error: 'User is not enrolled in this course' });
@@ -215,9 +216,10 @@ exports.unenrollUserCourse = async (req, res) => {
     }
 
     // Check if enrolled
-    const enrolledIndex = user.enrolledCourses.findIndex(
-      (ec) => ec.course.toString() === courseId
-    );
+    const enrolledIndex = user.enrolledCourses.findIndex((ec) => {
+      const cid = ec.course?._id || ec.course;
+      return cid && cid.toString() === courseId;
+    });
 
     if (enrolledIndex === -1) {
       return res.status(400).json({ success: false, error: 'User is not enrolled in this course' });

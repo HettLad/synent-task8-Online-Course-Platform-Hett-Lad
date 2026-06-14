@@ -38,7 +38,7 @@ const CoursePlayer = () => {
         // Find progress array for this specific course
         const activeEnrollment = userData.enrolledCourses.find(
           (ec) => {
-            const cid = typeof ec.course === 'object' ? ec.course._id : ec.course;
+            const cid = ec.course?._id || ec.course;
             return cid === courseId;
           }
         );
